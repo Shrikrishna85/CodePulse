@@ -66,7 +66,7 @@ public class SandboxRunner {
                         runCommand(language, memoryLimitMb),
                         testCase.stdin(),
                         timeLimitMs,
-                        memoryLimitMb);
+                        language == Language.JAVA ? Math.max(memoryLimitMb, 512) : memoryLimitMb);
                 Verdict verdict = VerdictMapper.mapProcessResult(execution, false);
                 if (verdict == Verdict.ACCEPTED
                         && !OutputChecker.matches(testCase.expectedOutput(), execution.stdout())) {
@@ -95,7 +95,7 @@ public class SandboxRunner {
         return switch (language) {
             case JAVA -> {
                 Files.writeString(workDirectory.resolve("Main.java"), sourceCode);
-                yield List.of("javac", "-encoding", "UTF-8", "Main.java");
+                yield List.of("javac", "-J-Xmx384m", "-J-Xss256k", "-encoding", "UTF-8", "Main.java");
             }
             case C -> {
                 Files.writeString(workDirectory.resolve("main.c"), sourceCode);

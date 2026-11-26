@@ -91,7 +91,7 @@ public class SubmissionWorker implements org.springframework.context.SmartLifecy
             }
         } catch (IOException | IllegalArgumentException | UnsupportedOperationException exception) {
             LOGGER.error("Submission {} could not be executed", job.id(), exception);
-            queueService.failInternally(job.id(), exception.getMessage());
+            queueService.failInternally(job.id(), "Execution infrastructure failed. Please retry later.");
         }
     }
 

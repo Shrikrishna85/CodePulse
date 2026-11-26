@@ -95,6 +95,10 @@ public class SecurityConfig {
                 .headers(headers -> headers
                         .contentTypeOptions(options -> {})
                         .frameOptions(frame -> frame.deny())
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; script-src 'self'; style-src 'self'; "
+                                        + "img-src 'self' data:; connect-src 'self'; object-src 'none'; "
+                                        + "base-uri 'self'; frame-ancestors 'none'; form-action 'self'"))
                         .httpStrictTransportSecurity(hsts -> hsts
                                 .includeSubDomains(true)
                                 .maxAgeInSeconds(31_536_000)))

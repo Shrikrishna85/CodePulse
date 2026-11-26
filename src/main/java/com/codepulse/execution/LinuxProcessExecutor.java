@@ -102,7 +102,7 @@ public class LinuxProcessExecutor {
 
         int exitCode = process.exitValue();
         ProcessResult.ExitReason reason;
-        if (outputLimitExceeded.get()) {
+        if (outputLimitExceeded.get() || exitCode == 153) {
             reason = ProcessResult.ExitReason.OUTPUT_LIMIT;
         } else if (!finished || exitCode == 124 || exitCode == 152) {
             reason = ProcessResult.ExitReason.TIME_LIMIT;
