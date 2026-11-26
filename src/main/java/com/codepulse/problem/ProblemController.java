@@ -1,0 +1,29 @@
+package com.codepulse.problem;
+
+import java.util.List;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/problems")
+public class ProblemController {
+
+    private final ProblemService problemService;
+
+    public ProblemController(ProblemService problemService) {
+        this.problemService = problemService;
+    }
+
+    @GetMapping
+    public List<ProblemService.ProblemSummary> listProblems() {
+        return problemService.listPublishedProblems();
+    }
+
+    @GetMapping("/{slug}")
+    public ProblemService.ProblemDetail getProblem(@PathVariable String slug) {
+        return problemService.getPublishedProblem(slug);
+    }
+}
