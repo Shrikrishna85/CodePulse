@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>CodePulse</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" href="/" aria-label="CodePulse home"><span class="brand-mark">&gt;_</span> CodePulse</a>
+    <div id="accountBar" class="account-bar" hidden>
+        <span id="accountName"></span>
+        <button id="logoutButton" class="button button-quiet" type="button">Sign out</button>
+    </div>
+</header>
+
+<main class="page">
+    <section id="authView" class="auth-card">
+        <p class="eyebrow">PRACTICE WITH PURPOSE</p>
+        <h1 id="authHeading">Welcome back</h1>
+        <p class="muted">Sign in to solve problems and track your progress.</p>
+        <form id="authForm" class="stack">
+            <label id="usernameField">Username
+                <input name="username" autocomplete="username" minlength="3" maxlength="40" required>
+            </label>
+            <label id="emailField" hidden>Email
+                <input name="email" type="email" autocomplete="email" maxlength="254">
+            </label>
+            <label>Password
+                <input name="password" type="password" autocomplete="current-password" minlength="12" required>
+            </label>
+            <button id="authSubmit" class="button button-primary" type="submit">Sign in</button>
+            <p id="authMessage" class="message" aria-live="polite"></p>
+        </form>
+        <button id="authModeButton" class="text-button" type="button">Create a student account</button>
+    </section>
+
+    <div id="appView" class="app-layout" hidden>
+        <nav class="side-nav" aria-label="Main navigation">
+            <button class="nav-button active" data-view="problemsView" type="button">Problems</button>
+            <button class="nav-button" data-view="submissionsView" type="button">My submissions</button>
+            <button id="adminNav" class="nav-button" data-view="adminView" type="button" hidden>Admin</button>
+        </nav>
+
+        <div class="content">
+            <section id="problemsView" class="view">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">PROBLEM SET</p>
+                        <h1>Choose a challenge</h1>
+                    </div>
+                    <button id="refreshProblems" class="button button-quiet" type="button">Refresh</button>
+                </div>
+                <p id="problemsMessage" class="message" aria-live="polite"></p>
+                <div id="problemList" class="problem-list"></div>
+            </section>
+
+            <section id="solverView" class="view" hidden>
+                <button id="backToProblems" class="text-button" type="button">← All problems</button>
+                <div class="solver-grid">
+                    <article class="panel problem-statement">
+                        <p id="problemMeta" class="eyebrow"></p>
+                        <h1 id="problemTitle"></h1>
+                        <div id="problemTags" class="tag-list"></div>
+                        <p id="problemStatement" class="statement"></p>
+                        <div id="samples" class="sample-list"></div>
+                    </article>
+                    <section class="panel editor-panel" aria-label="Code editor and submission">
+                        <div class="editor-toolbar">
+                            <label for="languageSelect">Language</label>
+                            <select id="languageSelect">
+                                <option value="JAVA">Java 17</option>
+                                <option value="C">C (GCC)</option>
+                            </select>
+                            <span class="editor-hint">Main class: <code>Main</code></span>
+                        </div>
+                        <div class="editor">
+                            <pre id="lineNumbers" aria-hidden="true">1</pre>
+                            <textarea id="sourceCode" spellcheck="false" autocapitalize="off"
+                                      autocomplete="off" aria-label="Source code" wrap="off"></textarea>
+                        </div>
+                        <div class="editor-footer">
+                            <span id="sourceSize" class="muted">0 / 65536 bytes</span>
+                            <button id="submitButton" class="button button-primary" type="button">Submit solution</button>
+                        </div>
+                        <div id="submissionPanel" class="submission-panel" hidden>
+                            <h2>Submission <span id="submissionVerdict" class="verdict"></span></h2>
+                            <p id="submissionMessage" class="muted" aria-live="polite"></p>
+                            <pre id="submissionError" class="error-output" hidden></pre>
+                            <div id="testResults" class="test-results"></div>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <section id="submissionsView" class="view" hidden>
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">YOUR ACTIVITY</p>
+                        <h1>My submissions</h1>
+                    </div>
+                    <button id="refreshSubmissions" class="button button-quiet" type="button">Refresh</button>
+                </div>
+                <p id="submissionsMessage" class="message" aria-live="polite"></p>
+                <div id="submissionList" class="submission-list"></div>
+                <section id="selectedSubmissionDetail" class="panel submission-detail" hidden>
+                    <h2><span id="selectedSubmissionTitle"></span> <span id="selectedSubmissionVerdict" class="verdict"></span></h2>
+                    <p id="selectedSubmissionMeta" class="muted"></p>
+                    <pre id="selectedSubmissionError" class="error-output" hidden></pre>
+                    <h3>Submitted source</h3>
+                    <pre id="selectedSubmissionCode" class="source-preview"></pre>
+                    <h3>Test results</h3>
+                    <div id="selectedSubmissionTests" class="test-results"></div>
+                </section>
+            </section>
+
+            <section id="adminView" class="view" hidden>
+                <p class="eyebrow">ADMINISTRATION</p>
+                <h1>Manage problems</h1>
+                <div class="admin-grid">
+                    <form id="createProblemForm" class="panel stack">
+                        <h2>Create a problem</h2>
+                        <label>Slug <input name="slug" pattern="[A-Za-z0-9]+(-[A-Za-z0-9]+)*" maxlength="100" required></label>
+                        <label>Title <input name="title" maxlength="160" required></label>
+                        <label>Statement <textarea name="statement" rows="6" required></textarea></label>
+                        <div class="form-row">
+                            <label>Difficulty
+                                <select name="difficulty"><option>EASY</option><option>MEDIUM</option><option>HARD</option></select>
+                            </label>
+                            <label>Time limit (ms) <input name="timeLimitMs" type="number" min="250" max="30000" value="2000" required></label>
+                            <label>Memory (MB) <input name="memoryLimitMb" type="number" min="32" max="1024" value="256" required></label>
+                        </div>
+                        <label>Tags, comma-separated <input name="tags" placeholder="arrays, hash-map"></label>
+                        <button class="button button-primary" type="submit">Create problem</button>
+                    </form>
+
+                    <form id="testCaseForm" class="panel stack">
+                        <h2>Add test case</h2>
+                        <label>Problem ID <input name="problemId" type="number" min="1" required></label>
+                        <label>Standard input <textarea name="stdin" rows="5"></textarea></label>
+                        <label>Expected output <textarea name="expectedOutput" rows="5"></textarea></label>
+                        <label class="checkbox-label"><input name="sample" type="checkbox"> Visible sample</label>
+                        <button class="button button-secondary" type="submit">Add test case</button>
+                        <button id="publishButton" class="button button-quiet" type="button">Publish this problem</button>
+                    </form>
+                </div>
+                <p id="adminMessage" class="message" aria-live="polite"></p>
+            </section>
+        </div>
+    </div>
+</main>
+<footer class="footer">CodePulse · Practice, learn, improve.</footer>
+</body>
+</html>
