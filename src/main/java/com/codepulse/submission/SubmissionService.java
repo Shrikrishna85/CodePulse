@@ -66,18 +66,44 @@ public class SubmissionService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Published problem not found");
         }
 
+        Long contestId = request.contestId();
+        if (contestId != null) {
+            Integer eligible = jdbcTemplate.queryForObject(
+                    """
+                    SELECT COUNT(*)
+                    FROM contest c
+                    JOIN contest_participant cp ON cp.contest_id = c.id AND cp.user_id = ?
+                    JOIN contest_problem cpr ON cpr.contest_id = c.id AND cpr.problem_id = ?
+                    WHERE c.id = ? AND CURRENT_TIMESTAMP BETWEEN c.starts_at AND c.ends_at
+                    """,
+                    Integer.class,
+                    user.id(),
+                    request.problemId(),
+                    contestId);
+            if (eligible == null || eligible == 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Register for an active contest containing this problem before submitting");
+            }
+        }
+
         KeyHolder keyHolder = new GeneratedKeyHolder();
         PreparedStatementCreator statementCreator = connection -> {
             PreparedStatement statement = connection.prepareStatement(
                     """
-                    INSERT INTO submission (user_id, problem_id, language, source_code)
-                    VALUES (?, ?, ?, ?)
+                    INSERT INTO submission (user_id, problem_id, contest_id, language, source_code)
+                    VALUES (?, ?, ?, ?, ?)
                     """,
                     Statement.RETURN_GENERATED_KEYS);
             statement.setLong(1, user.id());
             statement.setLong(2, request.problemId());
-            statement.setString(3, language.name());
-            statement.setString(4, request.sourceCode());
+            if (contestId == null) {
+                statement.setNull(3, java.sql.Types.BIGINT);
+            } else {
+                statement.setLong(3, contestId);
+            }
+            statement.setString(4, language.name());
+            statement.setString(5, request.sourceCode());
             return statement;
         };
         jdbcTemplate.update(statementCreator, keyHolder);
@@ -169,7 +195,7 @@ public class SubmissionService {
                 results);
     }
 
-    public record CreateSubmission(long problemId, String language, String sourceCode) {}
+    public record CreateSubmission(long problemId, String language, String sourceCode, Long contestId) {}
 
     public record SubmissionSummary(
             long id,

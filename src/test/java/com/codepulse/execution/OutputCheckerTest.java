@@ -17,4 +17,14 @@ class OutputCheckerTest {
         assertFalse(OutputChecker.matches("answer\n", "answer\n\n"));
         assertFalse(OutputChecker.matches("10\n", "01\n"));
     }
+
+    @Test
+    void preservesLeadingWhitespace() {
+        assertFalse(OutputChecker.matches(" value\n", "value\n"));
+    }
+
+    @Test
+    void normalizesLegacyCarriageReturns() {
+        assertTrue(OutputChecker.matches("a\rb\r", "a\nb\n"));
+    }
 }

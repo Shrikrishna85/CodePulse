@@ -21,4 +21,12 @@ class VerdictMapperTest {
         assertEquals(Verdict.COMPILATION_ERROR, VerdictMapper.mapProcessResult(exitFailure, true));
         assertEquals(Verdict.RUNTIME_ERROR, VerdictMapper.mapProcessResult(exitFailure, false));
     }
+
+    @Test
+    void mapsOutputCapAndSuccessfulCompilation() {
+        assertEquals(Verdict.OUTPUT_LIMIT_EXCEEDED, VerdictMapper.mapProcessResult(
+                new ProcessResult(ProcessResult.ExitReason.OUTPUT_LIMIT, 137, "", "", 10), false));
+        assertEquals(Verdict.ACCEPTED, VerdictMapper.mapProcessResult(
+                new ProcessResult(ProcessResult.ExitReason.EXITED, 0, "", "", 10), true));
+    }
 }

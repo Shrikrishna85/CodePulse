@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.codepulse.execution.SandboxRunner;
+import com.codepulse.execution.Verdict;
+import com.codepulse.similarity.SimilarityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -22,12 +24,17 @@ public class SubmissionWorker implements org.springframework.context.SmartLifecy
 
     private final SubmissionQueueService queueService;
     private final SandboxRunner sandboxRunner;
+    private final SimilarityService similarityService;
     private final AtomicBoolean running = new AtomicBoolean();
     private volatile List<Thread> workers = List.of();
 
-    public SubmissionWorker(SubmissionQueueService queueService, SandboxRunner sandboxRunner) {
+    public SubmissionWorker(
+            SubmissionQueueService queueService,
+            SandboxRunner sandboxRunner,
+            SimilarityService similarityService) {
         this.queueService = queueService;
         this.sandboxRunner = sandboxRunner;
+        this.similarityService = similarityService;
     }
 
     @Override
@@ -79,6 +86,9 @@ public class SubmissionWorker implements org.springframework.context.SmartLifecy
                     job.timeLimitMs(),
                     job.memoryLimitMb());
             queueService.complete(job, result);
+            if (result.verdict() == Verdict.ACCEPTED) {
+                similarityService.compareAcceptedSubmission(job.id());
+            }
         } catch (IOException | IllegalArgumentException | UnsupportedOperationException exception) {
             LOGGER.error("Submission {} could not be executed", job.id(), exception);
             queueService.failInternally(job.id(), exception.getMessage());

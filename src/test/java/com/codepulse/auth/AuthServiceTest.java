@@ -46,4 +46,26 @@ class AuthServiceTest {
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         verifyNoInteractions(jdbcTemplate, passwordEncoder, auditLogService);
     }
+
+    @Test
+    void registrationRejectsMalformedEmailBeforeDatabaseAccess() {
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> authService.register("student_1", "not-an-email", "a-strong-password"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        verifyNoInteractions(jdbcTemplate, passwordEncoder, auditLogService);
+    }
+
+    @Test
+    void registrationRejectsPasswordBeyondBcryptByteLimit() {
+        String tooLongUtf8Password = "\u00e9".repeat(37);
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> authService.register("student_1", "student@example.com", tooLongUtf8Password));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        verifyNoInteractions(jdbcTemplate, passwordEncoder, auditLogService);
+    }
 }

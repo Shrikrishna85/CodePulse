@@ -48,4 +48,32 @@ class ProblemServiceTest {
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         verifyNoInteractions(jdbcTemplate, auditLogService);
     }
+
+    @Test
+    void createProblemRejectsMoreThanTenDistinctTagsBeforeDatabaseAccess() {
+        ProblemService.CreateProblem request = new ProblemService.CreateProblem(
+                "two-sum",
+                "Two Sum",
+                "Find two values.",
+                "EASY",
+                1000,
+                128,
+                java.util.List.of("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"));
+
+        ResponseStatusException exception =
+                assertThrows(ResponseStatusException.class, () -> problemService.createProblem(request, 1));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        verifyNoInteractions(jdbcTemplate, auditLogService);
+    }
+
+    @Test
+    void addTestCaseRejectsMissingExpectedOutputBeforeDatabaseAccess() {
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> problemService.addTestCase(1, new ProblemService.NewTestCase("", null, false), 1));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        verifyNoInteractions(jdbcTemplate, auditLogService);
+    }
 }

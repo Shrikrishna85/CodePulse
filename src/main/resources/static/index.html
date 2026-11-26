@@ -42,6 +42,8 @@
         <nav class="side-nav" aria-label="Main navigation">
             <button class="nav-button active" data-view="problemsView" type="button">Problems</button>
             <button class="nav-button" data-view="submissionsView" type="button">My submissions</button>
+            <button class="nav-button" data-view="contestsView" type="button">Contests</button>
+            <button class="nav-button" data-view="analyticsView" type="button">Analytics</button>
             <button id="adminNav" class="nav-button" data-view="adminView" type="button" hidden>Admin</button>
         </nav>
 
@@ -117,6 +119,40 @@
                 </section>
             </section>
 
+            <section id="contestsView" class="view" hidden>
+                <div class="section-heading">
+                    <div><p class="eyebrow">COMPETE</p><h1>Contests</h1></div>
+                    <button id="refreshContests" class="button button-quiet" type="button">Refresh</button>
+                </div>
+                <p id="contestMessage" class="message" aria-live="polite"></p>
+                <div id="contestList" class="problem-list"></div>
+                <section id="contestDetail" class="panel contest-detail" hidden>
+                    <div class="section-heading">
+                        <div><p class="eyebrow">LIVE SCOREBOARD</p><h2 id="contestTitle"></h2></div>
+                        <button id="registerContest" class="button button-primary" type="button">Register</button>
+                    </div>
+                    <h3>Problems</h3>
+                    <div id="contestProblems" class="problem-list"></div>
+                    <h3>Scoreboard</h3>
+                    <div class="table-scroll">
+                        <table><thead><tr><th>Rank</th><th>Participant</th><th>Solved</th><th>Penalty</th></tr></thead>
+                            <tbody id="scoreboardRows"></tbody></table>
+                    </div>
+                </section>
+            </section>
+
+            <section id="analyticsView" class="view" hidden>
+                <p class="eyebrow">YOUR PROGRESS</p>
+                <h1>Analytics</h1>
+                <p id="analyticsMessage" class="message" aria-live="polite"></p>
+                <div id="personalStats" class="stats-grid"></div>
+                <div class="charts-grid">
+                    <article class="panel"><h2>Verdict breakdown</h2><canvas id="verdictChart" aria-label="Verdict breakdown chart"></canvas></article>
+                    <article class="panel"><h2>Submissions per day</h2><canvas id="dailyChart" aria-label="Submissions per day chart"></canvas></article>
+                    <article class="panel chart-wide"><h2>Problem acceptance rate</h2><canvas id="acceptanceChart" aria-label="Problem acceptance rate chart"></canvas></article>
+                </div>
+            </section>
+
             <section id="adminView" class="view" hidden>
                 <p class="eyebrow">ADMINISTRATION</p>
                 <h1>Manage problems</h1>
@@ -147,6 +183,13 @@
                         <button id="publishButton" class="button button-quiet" type="button">Publish this problem</button>
                     </form>
                 </div>
+                <section class="panel similarity-review">
+                    <div class="section-heading">
+                        <div><h2>Similarity review</h2><p class="muted">High-overlap accepted submissions are flagged for human review only.</p></div>
+                        <button id="refreshSimilarity" class="button button-quiet" type="button">Load pairs</button>
+                    </div>
+                    <div id="similarityPairs" class="submission-list"></div>
+                </section>
                 <p id="adminMessage" class="message" aria-live="polite"></p>
             </section>
         </div>

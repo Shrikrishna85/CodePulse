@@ -119,6 +119,20 @@ code { color: var(--accent); font-family: var(--mono); }
 .submission-detail { margin-top: 16px; }
 .submission-detail h3 { margin: 20px 0 8px; font-size: 14px; }
 .source-preview { overflow: auto; max-height: 420px; margin: 0; padding: 14px; border: 1px solid var(--border); border-radius: 7px; background: #0a101a; color: #d3deec; font: 12px/1.6 var(--mono); white-space: pre; }
+.contest-detail { margin-top: 20px; }
+.similarity-review { margin-top: 18px; }
+.contest-detail h3 { margin: 24px 0 10px; font-size: 15px; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; text-align: left; }
+th, td { padding: 11px 9px; border-bottom: 1px solid var(--border); font-size: 13px; }
+th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+.stat-card { padding: 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.stat-card strong { display: block; margin-top: 5px; color: var(--accent); font: 700 25px var(--mono); }
+.charts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.charts-grid h2 { margin-bottom: 12px; }
+.charts-grid canvas { display: block; width: 100%; height: 240px; }
+.chart-wide { grid-column: 1 / -1; }
 .error-output { padding: 12px; border: 1px solid #603941; border-radius: 7px; background: #24151b; color: #ffb1b8; }
 .admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; margin-top: 20px; }
 .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -132,6 +146,8 @@ code { color: var(--accent); font-family: var(--mono); }
     .nav-button { white-space: nowrap; }
     .solver-grid { grid-template-columns: 1fr; }
     .admin-grid { grid-template-columns: 1fr; }
+    .charts-grid { grid-template-columns: 1fr; }
+    .chart-wide { grid-column: auto; }
 }
 
 @media (max-width: 540px) {
@@ -141,6 +157,7 @@ code { color: var(--accent); font-family: var(--mono); }
     .editor-toolbar { flex-wrap: wrap; }
     .editor-hint { margin-left: 0; }
     .form-row { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr; }
     .editor { min-height: 340px; }
     .editor textarea { min-height: 340px; }
 }

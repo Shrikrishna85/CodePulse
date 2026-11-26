@@ -2,6 +2,7 @@ const state = {
     csrf: null,
     user: null,
     problem: null,
+    contestId: null,
     pollTimer: null,
     authMode: "login"
 };
@@ -94,7 +95,10 @@ async function loadProblems() {
             difficulty.className = "difficulty";
             difficulty.textContent = problem.difficulty;
             card.append(details, difficulty);
-            card.addEventListener("click", () => openProblem(problem.slug));
+            card.addEventListener("click", () => {
+                state.contestId = null;
+                openProblem(problem.slug);
+            });
             list.append(card);
         }
     } catch (error) {
@@ -102,8 +106,9 @@ async function loadProblems() {
     }
 }
 
-async function openProblem(slug) {
+async function openProblem(slug, contestId = state.contestId) {
     try {
+        state.contestId = contestId;
         state.problem = await api(`/api/problems/${encodeURIComponent(slug)}`);
         showView("solverView");
         byId("problemTitle").textContent = state.problem.title;
@@ -180,7 +185,8 @@ async function submitSolution() {
             body: JSON.stringify({
                 problemId: state.problem.id,
                 language: byId("languageSelect").value,
-                sourceCode: code
+                sourceCode: code,
+                contestId: state.contestId
             })
         });
         byId("submissionVerdict").textContent = result.verdict;
@@ -295,6 +301,177 @@ function renderSubmissionHistoryDetail(submission) {
     }
 }
 
+async function loadContests() {
+    try {
+        const contests = await api("/api/contests");
+        const list = byId("contestList");
+        list.replaceChildren();
+        list.hidden = false;
+        byId("contestDetail").hidden = true;
+        showMessage(byId("contestMessage"), contests.length ? "" : "No contests are scheduled.");
+        for (const contest of contests) {
+            const card = document.createElement("button");
+            card.type = "button";
+            card.className = "problem-card";
+            const title = document.createElement("h2");
+            title.textContent = contest.title;
+            const dates = document.createElement("p");
+            dates.textContent = `${new Date(contest.startsAt).toLocaleString()} – ${new Date(contest.endsAt).toLocaleString()}`;
+            const description = document.createElement("div");
+            description.append(title, dates);
+            const open = document.createElement("span");
+            open.className = "difficulty";
+            open.textContent = "OPEN";
+            card.append(description, open);
+            card.addEventListener("click", () => openContest(contest));
+            list.append(card);
+        }
+    } catch (error) {
+        showMessage(byId("contestMessage"), error.message, true);
+    }
+}
+
+async function openContest(contest) {
+    state.contestId = contest.id;
+    byId("contestList").hidden = true;
+    byId("contestDetail").hidden = false;
+    byId("contestTitle").textContent = contest.title;
+    try {
+        const [problems, scoreboard] = await Promise.all([
+            api(`/api/contests/${contest.id}/problems`),
+            api(`/api/contests/${contest.id}/scoreboard`)
+        ]);
+        const problemList = byId("contestProblems");
+        problemList.replaceChildren();
+        for (const problem of problems) {
+            const card = document.createElement("button");
+            card.type = "button";
+            card.className = "problem-card";
+            const title = document.createElement("h2");
+            title.textContent = `${String.fromCharCode(64 + problem.ordinal)}. ${problem.title}`;
+            const difficulty = document.createElement("span");
+            difficulty.className = "difficulty";
+            difficulty.textContent = problem.difficulty;
+            card.append(title, difficulty);
+            card.addEventListener("click", () => openProblem(problem.slug, contest.id));
+            problemList.append(card);
+        }
+        const rows = byId("scoreboardRows");
+        rows.replaceChildren();
+        for (const entry of scoreboard) {
+            const row = document.createElement("tr");
+            for (const value of [entry.rank, entry.username, entry.solvedCount, entry.penaltyMinutes]) {
+                const cell = document.createElement("td");
+                cell.textContent = String(value);
+                row.append(cell);
+            }
+            rows.append(row);
+        }
+        showMessage(byId("contestMessage"), "");
+    } catch (error) {
+        showMessage(byId("contestMessage"), error.message, true);
+    }
+}
+
+async function registerForContest() {
+    if (!state.contestId) return;
+    try {
+        await api(`/api/contests/${state.contestId}/register`, { method: "POST" });
+        showMessage(byId("contestMessage"), "You are registered for this contest.");
+    } catch (error) {
+        showMessage(byId("contestMessage"), error.message, true);
+    }
+}
+
+async function loadAnalytics() {
+    try {
+        const overview = await api("/api/analytics/overview");
+        const stats = overview.personalStats;
+        byId("personalStats").replaceChildren(
+            statCard("Solved problems", stats.solvedProblems),
+            statCard("Accepted submissions", stats.accepted),
+            statCard("Total submissions", stats.submissions)
+        );
+        drawBarChart(byId("verdictChart"),
+            overview.verdicts.map((item) => item.verdict),
+            overview.verdicts.map((item) => item.count));
+        drawBarChart(byId("dailyChart"),
+            overview.submissionsPerDay.map((item) => item.date.slice(5)),
+            overview.submissionsPerDay.map((item) => item.count));
+        drawBarChart(byId("acceptanceChart"),
+            overview.problemAcceptance.map((item) => item.title),
+            overview.problemAcceptance.map((item) => item.ratePercent),
+            true);
+        showMessage(byId("analyticsMessage"), "");
+    } catch (error) {
+        showMessage(byId("analyticsMessage"), error.message, true);
+    }
+}
+
+function statCard(label, value) {
+    const card = document.createElement("div");
+    card.className = "stat-card";
+    const name = document.createElement("span");
+    name.className = "muted";
+    name.textContent = label;
+    const count = document.createElement("strong");
+    count.textContent = String(value);
+    card.append(name, count);
+    return card;
+}
+
+function drawBarChart(canvas, labels, values, horizontal = false) {
+    const context = canvas.getContext("2d");
+    const ratio = window.devicePixelRatio || 1;
+    const width = Math.max(280, canvas.clientWidth);
+    const height = horizontal ? Math.max(250, labels.length * 38 + 50) : 240;
+    canvas.style.height = `${height}px`;
+    canvas.width = width * ratio;
+    canvas.height = height * ratio;
+    context.scale(ratio, ratio);
+    context.clearRect(0, 0, width, height);
+    const maximum = Math.max(1, ...values);
+    context.font = "11px Segoe UI, sans-serif";
+    context.fillStyle = "#9aa9bf";
+
+    if (horizontal) {
+        const labelWidth = Math.min(150, width * 0.38);
+        const chartWidth = width - labelWidth - 45;
+        const rowHeight = 32;
+        labels.forEach((label, index) => {
+            const y = 24 + index * rowHeight;
+            const shownLabel = label.length > 22 ? `${label.slice(0, 20)}…` : label;
+            context.fillText(shownLabel, 0, y + 13);
+            context.fillStyle = "#26354a";
+            context.fillRect(labelWidth, y, chartWidth, 14);
+            context.fillStyle = "#6de0bd";
+            const barWidth = chartWidth * Math.max(0, Math.min(100, values[index])) / 100;
+            context.fillRect(labelWidth, y, barWidth, 14);
+            context.fillStyle = "#c8d4e4";
+            context.fillText(`${Number(values[index]).toFixed(0)}%`, labelWidth + chartWidth + 7, y + 12);
+            context.fillStyle = "#9aa9bf";
+        });
+        return;
+    }
+
+    const chartTop = 18;
+    const chartHeight = height - 58;
+    const slot = width / Math.max(1, values.length);
+    values.forEach((value, index) => {
+        const barHeight = chartHeight * value / maximum;
+        const x = slot * index + slot * 0.2;
+        context.fillStyle = "#6de0bd";
+        context.fillRect(x, chartTop + chartHeight - barHeight, slot * 0.6, barHeight);
+        context.fillStyle = "#c8d4e4";
+        context.textAlign = "center";
+        context.fillText(String(value), x + slot * 0.3, chartTop + chartHeight - barHeight - 5);
+        const label = labels[index].length > 12 ? `${labels[index].slice(0, 10)}…` : labels[index];
+        context.fillStyle = "#9aa9bf";
+        context.fillText(label, x + slot * 0.3, height - 18);
+    });
+    context.textAlign = "start";
+}
+
 function showView(viewId) {
     document.querySelectorAll(".view").forEach((view) => {
         view.hidden = view.id !== viewId;
@@ -369,6 +546,45 @@ async function publishProblem() {
     }
 }
 
+async function loadSimilarityPairs() {
+    try {
+        const pairs = await api("/api/admin/similarity/review");
+        const container = byId("similarityPairs");
+        container.replaceChildren();
+        if (pairs.length === 0) {
+            showMessage(byId("adminMessage"), "No high-overlap pairs are pending review.");
+            return;
+        }
+        for (const pair of pairs) {
+            const row = document.createElement("div");
+            row.className = "submission-card";
+            const details = document.createElement("span");
+            details.textContent =
+                `Problem #${pair.problemId}: ${pair.usernameA} (#${pair.submissionAId}) ↔ ${pair.usernameB} (#${pair.submissionBId}) · ${(pair.score * 100).toFixed(1)}% · ${pair.reviewStatus}`;
+            row.append(details);
+            if (pair.reviewStatus === "PENDING") {
+                const review = document.createElement("button");
+                review.type = "button";
+                review.className = "button button-quiet";
+                review.textContent = "Mark reviewed";
+                review.addEventListener("click", async () => {
+                    try {
+                        await api(`/api/admin/similarity/${pair.id}/review`, { method: "POST" });
+                        loadSimilarityPairs();
+                    } catch (error) {
+                        showMessage(byId("adminMessage"), error.message, true);
+                    }
+                });
+                row.append(review);
+            }
+            container.append(row);
+        }
+        showMessage(byId("adminMessage"), "");
+    } catch (error) {
+        showMessage(byId("adminMessage"), error.message, true);
+    }
+}
+
 byId("authModeButton").addEventListener("click", () => {
     setAuthMode(state.authMode === "login" ? "register" : "login");
 });
@@ -411,11 +627,16 @@ document.querySelectorAll(".nav-button").forEach((button) => {
         showView(button.dataset.view);
         if (button.dataset.view === "problemsView") loadProblems();
         if (button.dataset.view === "submissionsView") loadSubmissions();
+        if (button.dataset.view === "contestsView") loadContests();
+        if (button.dataset.view === "analyticsView") loadAnalytics();
     });
 });
 byId("refreshProblems").addEventListener("click", loadProblems);
 byId("refreshSubmissions").addEventListener("click", loadSubmissions);
-byId("backToProblems").addEventListener("click", () => showView("problemsView"));
+byId("backToProblems").addEventListener("click", () => {
+    state.contestId = null;
+    showView("problemsView");
+});
 byId("sourceCode").addEventListener("input", () => {
     updateLineNumbers();
     updateSourceSize();
@@ -435,6 +656,9 @@ byId("submitButton").addEventListener("click", submitSolution);
 byId("createProblemForm").addEventListener("submit", createProblem);
 byId("testCaseForm").addEventListener("submit", addTestCase);
 byId("publishButton").addEventListener("click", publishProblem);
+byId("refreshContests").addEventListener("click", loadContests);
+byId("registerContest").addEventListener("click", registerForContest);
+byId("refreshSimilarity").addEventListener("click", loadSimilarityPairs);
 
 (async function initialize() {
     try {
