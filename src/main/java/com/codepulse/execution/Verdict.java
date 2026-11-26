@@ -1,0 +1,14 @@
+package com.codepulse.execution;
+
+public enum Verdict {
+    QUEUED,
+    RUNNING,
+    ACCEPTED,
+    WRONG_ANSWER,
+    TIME_LIMIT_EXCEEDED,
+    MEMORY_LIMIT_EXCEEDED,
+    OUTPUT_LIMIT_EXCEEDED,
+    COMPILATION_ERROR,
+    RUNTIME_ERROR,
+    INTERNAL_ERROR
+}
