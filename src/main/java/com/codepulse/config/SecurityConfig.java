@@ -1,5 +1,8 @@
 package com.codepulse.config;
 
+import com.codepulse.security.SubmissionRateLimiter;
+import com.codepulse.security.SubmissionRequestGuardFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +15,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
@@ -61,7 +65,9 @@ public class SecurityConfig {
             HttpSecurity http,
             CsrfTokenRepository csrfTokenRepository,
             SecurityContextRepository securityContextRepository,
-            SessionAuthenticationStrategy sessionAuthenticationStrategy) throws Exception {
+            SessionAuthenticationStrategy sessionAuthenticationStrategy,
+            SubmissionRateLimiter submissionRateLimiter,
+            ObjectMapper objectMapper) throws Exception {
         http
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(csrfTokenRepository)
@@ -91,7 +97,10 @@ public class SecurityConfig {
                         .frameOptions(frame -> frame.deny())
                         .httpStrictTransportSecurity(hsts -> hsts
                                 .includeSubDomains(true)
-                                .maxAgeInSeconds(31_536_000)));
+                                .maxAgeInSeconds(31_536_000)))
+                .addFilterAfter(
+                        new SubmissionRequestGuardFilter(submissionRateLimiter, objectMapper),
+                        AuthorizationFilter.class);
         return http.build();
     }
 
